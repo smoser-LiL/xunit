@@ -1,62 +1,61 @@
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using TestDriven.Framework;
 
 namespace Xunit.Runner.TdNet
 {
 	public class TdNetRunner : ITestRunner
 	{
-		public virtual TdNetRunnerHelper CreateHelper(ITestListener testListener, Assembly assembly) =>
-			new TdNetRunnerHelper(assembly, testListener);
+		public virtual TdNetRunnerHelper CreateHelper(
+			ITestListener testListener,
+			Assembly assembly) =>
+				new TdNetRunnerHelper(assembly, testListener);
 
-		public TestRunState RunAssembly(ITestListener testListener, Assembly assembly)
+		TestRunState Run(
+			ITestListener testListener,
+			Assembly assembly,
+			Func<TdNetRunnerHelper, TestRunState> action)
 		{
 			var helper = CreateHelper(testListener, assembly);
 			try
 			{
-				return helper.Run();
+				return action(helper);
 			}
 			finally
 			{
-				ThreadPool.QueueUserWorkItem(_ => helper.DisposeAsync());
+				ExecuteOnBackgroundThread(() => helper.DisposeAsync());
 			}
 		}
 
-		public TestRunState RunMember(ITestListener testListener, Assembly assembly, MemberInfo member)
-		{
-			var helper = CreateHelper(testListener, assembly);
-			try
-			{
-				var type = member as Type;
-				if (type != null)
-					return helper.RunClass(type);
+		protected virtual void ExecuteOnBackgroundThread(Func<ValueTask> action) =>
+			ThreadPool.QueueUserWorkItem(_ => action());
 
-				var method = member as MethodInfo;
-				if (method != null)
-					return helper.RunMethod(method);
+		public TestRunState RunAssembly(
+			ITestListener testListener,
+			Assembly assembly) =>
+				Run(testListener, assembly, helper => helper.RunAll());
 
-				return TestRunState.NoTests;
-			}
-			finally
-			{
-				ThreadPool.QueueUserWorkItem(_ => helper.DisposeAsync());
-			}
-		}
+		public TestRunState RunMember(
+			ITestListener testListener,
+			Assembly assembly,
+			MemberInfo member) =>
+				Run(testListener, assembly, helper =>
+				{
+					if (member is Type type)
+						return helper.RunClass(type);
 
-		public TestRunState RunNamespace(ITestListener testListener, Assembly assembly, string ns)
-		{
-			var helper = CreateHelper(testListener, assembly);
-			try
-			{
-				var testCases = helper.Discover().Where(tc => ns == null || tc.TestNamespace == ns).ToList();
-				return helper.Run(testCases);
-			}
-			finally
-			{
-				ThreadPool.QueueUserWorkItem(_ => helper.DisposeAsync());
-			}
-		}
+					if (member is MethodInfo method)
+						return helper.RunMethod(method);
+
+					return TestRunState.NoTests;
+				});
+
+		public TestRunState RunNamespace(
+			ITestListener testListener,
+			Assembly assembly,
+			string ns) =>
+				Run(testListener, assembly, helper => helper.RunNamespace(ns));
 	}
 }

@@ -12,11 +12,10 @@ namespace Xunit.Runner.TdNet
 	public class ResultSink : TestMessageSink
 	{
 		readonly MessageMetadataCache metadataCache = new MessageMetadataCache();
-		readonly int totalTests;
+		volatile int totalTests = 0;
 
-		public ResultSink(ITestListener listener, int totalTests)
+		public ResultSink(ITestListener listener)
 		{
-			this.totalTests = totalTests;
 			TestListener = listener;
 			TestRunState = TestRunState.NoTests;
 
@@ -27,8 +26,7 @@ namespace Xunit.Runner.TdNet
 				args => metadataCache.TryRemove(args.Message);
 			Execution.TestPassedEvent += HandleTestPassed;
 			Execution.TestSkippedEvent += HandleTestSkipped;
-			Execution.TestStartingEvent +=
-				args => metadataCache.Set(args.Message);
+			Execution.TestStartingEvent += HandleTestStarting;
 
 			Diagnostics.ErrorMessageEvent +=
 				args => ReportError("Fatal Error", args.Message);
@@ -82,7 +80,7 @@ namespace Xunit.Runner.TdNet
 			TestRunState = TestRunState.Failure;
 
 			var testFailed = args.Message;
-			var testResult = ToTdNetTestResult(testFailed, TestState.Failed, totalTests);
+			var testResult = ToTdNetTestResult(testFailed, TestState.Failed);
 			testResult.Message = ExceptionUtility.CombineMessages(testFailed);
 			testResult.StackTrace = ExceptionUtility.CombineStackTraces(testFailed);
 
@@ -97,7 +95,7 @@ namespace Xunit.Runner.TdNet
 				TestRunState = TestRunState.Success;
 
 			var testPassed = args.Message;
-			var testResult = ToTdNetTestResult(testPassed, TestState.Passed, totalTests);
+			var testResult = ToTdNetTestResult(testPassed, TestState.Passed);
 
 			TestListener.TestFinished(testResult);
 
@@ -110,10 +108,16 @@ namespace Xunit.Runner.TdNet
 				TestRunState = TestRunState.Success;
 
 			var testSkipped = args.Message;
-			var testResult = ToTdNetTestResult(testSkipped, TestState.Ignored, totalTests);
+			var testResult = ToTdNetTestResult(testSkipped, TestState.Ignored);
 			testResult.Message = testSkipped.Reason;
 
 			TestListener.TestFinished(testResult);
+		}
+
+		void HandleTestStarting(MessageHandlerArgs<_TestStarting> args)
+		{
+			Interlocked.Increment(ref totalTests);
+			metadataCache.Set(args.Message);
 		}
 
 		void ReportError(
@@ -137,8 +141,7 @@ namespace Xunit.Runner.TdNet
 
 		TestResult ToTdNetTestResult(
 			_TestResultMessage testResult,
-			TestState testState,
-			int totalTests)
+			TestState testState)
 		{
 			var testClassMetadata = Guard.NotNull($"Cannot get test class metadata for ID {testResult.TestClassUniqueID}", metadataCache.TryGetClassMetadata(testResult));
 			var testClass = Type.GetType(testClassMetadata.TestClass);

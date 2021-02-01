@@ -17,7 +17,7 @@ namespace Xunit
 {
 	/// <summary>
 	/// Default implementation of <see cref="IFrontController"/> which supports running tests from
-	/// both xUnit.net v1 and v2.
+	/// both xUnit.net v1, v2, and v3.
 	/// </summary>
 	public class XunitFrontController : IFrontController
 	{
