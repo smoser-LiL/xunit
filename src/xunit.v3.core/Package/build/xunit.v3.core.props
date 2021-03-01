@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <ProjectCapability Include="TestContainer" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DebugSymbols>true</DebugSymbols>
+    <!-- Turn off Microsoft.NET.Test.SDK's auto-generated entrypoint, as it conflicts with ours -->
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <IsTestProject>true</IsTestProject>
+    <TestProject>true</TestProject>
+  </PropertyGroup>
+
+  <!-- .NET Framework and .NET Core must be executables -->
+  <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' OR '$(TargetFrameworkIdentifier)' == '.NETCoreApp' ">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+</Project>

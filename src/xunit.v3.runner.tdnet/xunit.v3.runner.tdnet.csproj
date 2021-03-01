@@ -2,9 +2,13 @@
 
   <PropertyGroup>
     <RootNamespace>Xunit.Runner.TdNet</RootNamespace>
+    <RunILRepack>true</RunILRepack>
     <TargetFramework>net472</TargetFramework>
-    <Title>xUnit.net [TestDriven.NET Runner]</Title>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ILRepackExclusions Include="$(OutputPath)TestDriven.Framework.dll" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\xunit.v3.runner.utility\xunit.v3.runner.utility.csproj" />
@@ -13,5 +17,34 @@
   <ItemGroup>
     <PackageReference Include="TestDriven.Framework" Version="2.0.0" />
   </ItemGroup>
+
+  <Target Name="ILRepack" AfterTargets="Build" Condition=" '$(TargetFramework)' != '' ">
+    <PropertyGroup>
+      <OutputAssembly>$([System.IO.Path]::Combine("$(MSBuildThisFileDirectory)", "$(OutputPath)", "merged", "$(AssemblyName).dll"))</OutputAssembly>
+    </PropertyGroup>
+
+    <Message Text="$(MSBuildThisFileName) -> $(OutputAssembly)" Importance="High" />
+    <CallTarget Targets="ILRepackConditional" />
+  </Target>
+
+  <Target Name="ILRepackConditional" Inputs="$(MSBuildThisFileDirectory)$(OutputPath)$(AssemblyName).dll" Outputs="$(MSBuildThisFileDirectory)$(OutputPath)merged\$(AssemblyName).dll">
+    <PropertyGroup>
+      <ILRepackExe>$([System.IO.Path]::Combine($(NuGetPackageRoot), "ilrepack.msbuild.task", $(ILRepackVersion), "tools", "ilrepack.exe"))</ILRepackExe>
+      <ILRepackExe Condition=" '$(OS)' != 'Windows_NT' ">mono $(ILRepackExe)</ILRepackExe>
+      <MainAssembly>$([System.IO.Path]::Combine($(MSBuildThisFileDirectory), $(OutputPath), "$(AssemblyName).dll"))</MainAssembly>
+      <OutputAssembly>$([System.IO.Path]::Combine($(MSBuildThisFileDirectory), $(OutputPath), "merged", "$(AssemblyName).dll"))</OutputAssembly>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ILRepackDependencies
+          Include="$(OutputPath)*.dll"
+          Exclude="$(OutputPath)$(AssemblyName).dll;$(OutputPath)TestDriven*.*" />
+    </ItemGroup>
+
+    <MakeDir Directories="$(MSBuildThisFileDirectory)$(OutputPath)merged" />
+    <Exec
+        StandardOutputImportance="low"
+        Command="$(ILRepackExe) -internalize -ndebug -lib:$(OutputPath) -out:$(OutputAssembly) $(MainAssembly) @(ILRepackDependencies, ' ')" />
+  </Target>
 
 </Project>

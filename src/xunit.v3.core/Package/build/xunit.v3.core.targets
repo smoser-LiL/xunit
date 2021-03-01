@@ -1,7 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Desktop CLR needs auto-generated binding redirects (and full PDBs for TPv1) -->
+  <!-- .NET Framework and .NET Core must be executables -->
+  <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' OR '$(TargetFrameworkIdentifier)' == '.NETCoreApp' ">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <!-- .NET Framework needs auto-generated binding redirects (and full PDBs for TPv1) -->
   <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">
     <AutoGenerateBindingRedirects Condition=" '$(AutoGenerateBindingRedirects)' == '' ">true</AutoGenerateBindingRedirects>
     <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
@@ -9,7 +14,7 @@
   </PropertyGroup>
 
   <!-- Everything else is TPv2, which wants portable PDBs -->
-  <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' ">
+  <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' != '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' ">
     <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
   </PropertyGroup>
 
