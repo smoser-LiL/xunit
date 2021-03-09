@@ -22,12 +22,12 @@ public static class SignPackages
 		}
 
 		var packageFiles =
-			Directory.GetFiles(context.PackageOutputFolder, "*.nupkg", SearchOption.AllDirectories)
-				.OrderBy(x => x)
+			Directory
+				.GetFiles(context.PackageOutputFolder, "*.nupkg", SearchOption.AllDirectories)
 				.Select(x => x.Substring(context.BaseFolder.Length + 1));
 
 		var signClientAppSettings = Path.Combine(context.BaseFolder, "tools", "SignClient", "appsettings.json");
-		foreach (var packageFile in packageFiles)
+		foreach (var packageFile in packageFiles.OrderBy(x => x))
 		{
 			var args = $"SignClient sign -c \"{signClientAppSettings}\" -r \"{signClientUser}\" -s \"{signClientSecret}\" -n \"xUnit.net\" -d \"xUnit.net\" -u \"https://github.com/xunit/xunit\" -i \"{packageFile}\"";
 			var redactedArgs =

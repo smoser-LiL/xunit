@@ -12,7 +12,7 @@ using Xunit.v3;
 // TODO: Because the engine has asynchronous state, many of the operations here probably need
 // to wait for the engine to reach the Connected state before doing the requested operation.
 // This includes metadata properties (like TestFrameworkDisplayName) as well as operations
-// (like Find and Run).
+// (like Find/Run).
 namespace Xunit.Runner.v3
 {
 	/// <summary>
@@ -30,13 +30,7 @@ namespace Xunit.Runner.v3
 		readonly TcpRunnerEngine runnerEngine;
 		readonly _ISourceInformationProvider sourceInformationProvider;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Xunit3"/> class.
-		/// </summary>
-		/// <param name="diagnosticMessageSink">The message sink which receives <see cref="_DiagnosticMessage"/> messages.</param>
-		/// <param name="projectAssembly">The project assembly to launch for find/run operations.</param>
-		/// <param name="sourceInformationProvider">Source code information provider.</param>
-		public Xunit3(
+		Xunit3(
 			_IMessageSink diagnosticMessageSink,
 			XunitProjectAssembly projectAssembly,
 			_ISourceInformationProvider sourceInformationProvider)
@@ -45,9 +39,10 @@ namespace Xunit.Runner.v3
 			this.projectAssembly = Guard.ArgumentNotNull(nameof(projectAssembly), projectAssembly);
 			this.sourceInformationProvider = Guard.ArgumentNotNull(nameof(sourceInformationProvider), sourceInformationProvider);
 
-			Guard.NotNull("We do not yet support dynamic assemblies for Xunit3", projectAssembly.AssemblyFilename);
+			Guard.NotNull($"{typeof(Xunit3).FullName} does not yet support dynamic assemblies", projectAssembly.AssemblyFilename);
+			Guard.ArgumentValid(nameof(projectAssembly), "xUnit.net v3 tests do not support app domains", projectAssembly.Configuration.AppDomainOrDefault != AppDomainSupport.Required);
 
-			runnerEngine = new TcpRunnerEngine("engine-id-tbd", OnMessage, diagnosticMessageSink);
+			runnerEngine = new TcpRunnerEngine("tbd", OnMessage, diagnosticMessageSink);
 			disposalTracker.Add(runnerEngine);
 
 			var port = runnerEngine.Start();
@@ -225,19 +220,25 @@ namespace Xunit.Runner.v3
 			_IMessageSink? diagnosticMessageSink = null,
 			bool verifyAssembliesOnDisk = true)
 		{
+			Guard.ArgumentNotNull(nameof(projectAssembly), projectAssembly);
+
 			var assemblyFileName = projectAssembly.AssemblyFilename;
 
-			Guard.ArgumentNotNull(nameof(diagnosticMessageSink), diagnosticMessageSink);
-			Guard.ArgumentNotNull($"{nameof(projectAssembly)}.{nameof(XunitProjectAssembly.AssemblyFilename)}", assemblyFileName);
+			if (diagnosticMessageSink == null)
+				diagnosticMessageSink = _NullMessageSink.Instance;
+
+			if (verifyAssembliesOnDisk && assemblyFileName != null)
+				Guard.FileExists($"{nameof(projectAssembly)}.{nameof(XunitProjectAssembly.AssemblyFilename)}", assemblyFileName);
+
+#if NETFRAMEWORK
+			if (sourceInformationProvider == null && assemblyFileName != null)
+				sourceInformationProvider = new VisualStudioSourceInformationProvider(assemblyFileName, diagnosticMessageSink);
+#endif
 
 			return new Xunit3(
 				diagnosticMessageSink,
 				projectAssembly,
-#if NETSTANDARD
 				sourceInformationProvider ?? _NullSourceInformationProvider.Instance
-#else
-				sourceInformationProvider ?? new VisualStudioSourceInformationProvider(assemblyFileName, diagnosticMessageSink)
-#endif
 			);
 		}
 	}

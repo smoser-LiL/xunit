@@ -106,7 +106,7 @@ public class BufferedTcpClientTests
 				"client",
 				socket,
 				request => Requests.Add(Encoding.UTF8.GetString(request.ToArray())),
-				new _NullMessageSink()
+				_NullMessageSink.Instance
 			);
 		}
 
@@ -179,7 +179,7 @@ public class BufferedTcpClientTests
 					"server",
 					socket,
 					request => Requests.Add(Encoding.UTF8.GetString(request.ToArray())),
-					new _NullMessageSink()
+					_NullMessageSink.Instance
 				);
 				bufferedClient.Start();
 			});

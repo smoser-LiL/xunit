@@ -16,7 +16,7 @@ namespace Xunit.Runner.Common
 	{
 		readonly string? defaultDirectory = null;
 		readonly _ITestFrameworkExecutionOptions defaultExecutionOptions = _TestFrameworkOptions.ForExecution();
-		readonly Dictionary<string, _ITestFrameworkExecutionOptions> executionOptionsByAssembly = new Dictionary<string, _ITestFrameworkExecutionOptions>(StringComparer.OrdinalIgnoreCase);
+		readonly Dictionary<string, _ITestFrameworkExecutionOptions> executionOptionsByAssembly = new(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="DefaultRunnerReporterMessageHandler"/> class.
@@ -74,7 +74,7 @@ namespace Xunit.Runner.Common
 		/// <summary>
 		/// Gets the metadata cache.
 		/// </summary>
-		protected MessageMetadataCache MetadataCache { get; } = new MessageMetadataCache();
+		protected MessageMetadataCache MetadataCache { get; } = new();
 
 		void AddExecutionOptions(
 			string? assemblyFilename,
@@ -639,27 +639,27 @@ namespace Xunit.Runner.Common
 			var longestTime = totalTime.Length;
 			var longestErrors = totalErrors.ToString().Length;
 
-			foreach (var summary in summaries.SummariesByAssemblyUniqueID)
+			foreach (var (assemblyUniqueID, summary) in summaries.SummariesByAssemblyUniqueID)
 			{
-				var assemblyDisplayName = assemblyDisplayNames[summary.AssemblyUniqueID];
-				if (summary.Summary.Total == 0)
+				var assemblyDisplayName = assemblyDisplayNames[assemblyUniqueID];
+				if (summary.Total == 0)
 					logger.LogImportantMessage($"   {assemblyDisplayName.PadRight(longestAssemblyName)}  Total: {"0".PadLeft(longestTotal)}");
 				else
-					logger.LogImportantMessage($"   {assemblyDisplayName.PadRight(longestAssemblyName)}  Total: {summary.Summary.Total.ToString().PadLeft(longestTotal)}, Errors: {summary.Summary.Errors.ToString().PadLeft(longestErrors)}, Failed: {summary.Summary.Failed.ToString().PadLeft(longestFailed)}, Skipped: {summary.Summary.Skipped.ToString().PadLeft(longestSkipped)}, Time: {summary.Summary.Time.ToString("0.000s").PadLeft(longestTime)}");
+					logger.LogImportantMessage($"   {assemblyDisplayName.PadRight(longestAssemblyName)}  Total: {summary.Total.ToString().PadLeft(longestTotal)}, Errors: {summary.Errors.ToString().PadLeft(longestErrors)}, Failed: {summary.Failed.ToString().PadLeft(longestFailed)}, Skipped: {summary.Skipped.ToString().PadLeft(longestSkipped)}, Time: {summary.Time.ToString("0.000s").PadLeft(longestTime)}");
 			}
 
 			if (summaries.SummariesByAssemblyUniqueID.Count > 1)
 			{
 				logger.LogImportantMessage($"   {" ".PadRight(longestAssemblyName)}         {"-".PadRight(longestTotal, '-')}          {"-".PadRight(longestErrors, '-')}          {"-".PadRight(longestFailed, '-')}           {"-".PadRight(longestSkipped, '-')}        {"-".PadRight(longestTime, '-')}");
-				logger.LogImportantMessage($"   {"GRAND TOTAL:".PadLeft(longestAssemblyName + 8)} {totalTestsRun}          {totalErrors}          {totalTestsFailed}           {totalTestsSkipped}        {totalTime} ({summaries.ElapsedClockTime.TotalSeconds.ToString("0.000s")})");
+				logger.LogImportantMessage($"   {"GRAND TOTAL:".PadLeft(longestAssemblyName + 8)} {totalTestsRun}          {totalErrors}          {totalTestsFailed}           {totalTestsSkipped}        {totalTime} ({summaries.ElapsedClockTime.TotalSeconds:0.000s})");
 			}
 		}
 
 		class ReaderWriterLockWrapper : IDisposable
 		{
-			static readonly ReaderWriterLockSlim @lock = new ReaderWriterLockSlim();
-			static readonly ReaderWriterLockWrapper lockForRead = new ReaderWriterLockWrapper(@lock.ExitReadLock);
-			static readonly ReaderWriterLockWrapper lockForWrite = new ReaderWriterLockWrapper(@lock.ExitWriteLock);
+			static readonly ReaderWriterLockSlim @lock = new();
+			static readonly ReaderWriterLockWrapper lockForRead = new(@lock.ExitReadLock);
+			static readonly ReaderWriterLockWrapper lockForWrite = new(@lock.ExitWriteLock);
 
 			readonly Action unlock;
 

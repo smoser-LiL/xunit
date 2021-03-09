@@ -546,7 +546,7 @@ public class XunitTestFrameworkDiscovererTests
 			_ISourceInformationProvider? sourceProvider,
 			_IMessageSink? diagnosticMessageSink,
 			IXunitTestCollectionFactory? collectionFactory)
-				: base(assembly, configFileName: null, sourceProvider ?? Substitute.For<_ISourceInformationProvider>(), diagnosticMessageSink ?? new _NullMessageSink(), collectionFactory)
+				: base(assembly, configFileName: null, sourceProvider ?? Substitute.For<_ISourceInformationProvider>(), diagnosticMessageSink ?? _NullMessageSink.Instance, collectionFactory)
 		{
 			Assembly = assembly;
 			Sink = new TestableTestDiscoverySink();

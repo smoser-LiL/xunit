@@ -12,7 +12,6 @@ public class TcpEngineTests
 	public class StartupAndShutdownMessages
 	{
 		readonly List<_MessageSinkMessage> messages = new();
-		readonly _NullMessageSink nullMessageSink = new();
 		readonly XunitProject project = new();
 		readonly _IMessageSink spyMessageSink;
 
@@ -46,7 +45,7 @@ public class TcpEngineTests
 		{
 			var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, spyMessageSink);
 			var runnerPort = runnerEngine.Start();
-			var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, nullMessageSink);
+			var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, _NullMessageSink.Instance);
 			var executionPort = await executionEngine.Start();
 			await WaitForConnection(runnerEngine);
 
@@ -74,7 +73,7 @@ public class TcpEngineTests
 		{
 			var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, spyMessageSink);
 			var runnerPort = runnerEngine.Start();
-			var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, nullMessageSink);
+			var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, _NullMessageSink.Instance);
 			var executionPort = await executionEngine.Start();
 			await WaitForConnection(runnerEngine);
 
@@ -100,7 +99,7 @@ public class TcpEngineTests
 		[Fact]
 		public async ValueTask ExecutionEngine_WithConnection()
 		{
-			var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, nullMessageSink);
+			var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, _NullMessageSink.Instance);
 			var runnerPort = runnerEngine.Start();
 			var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, spyMessageSink);
 			await executionEngine.Start();
@@ -128,7 +127,6 @@ public class TcpEngineTests
 
 	public class Quit
 	{
-		readonly _NullMessageSink nullMessageSink = new();
 		readonly XunitProject project = new();
 
 		public Quit()
@@ -139,9 +137,9 @@ public class TcpEngineTests
 		[Fact]
 		public async ValueTask WhenRunnerSendsQuit_ExecutionEngineStops()
 		{
-			await using var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, nullMessageSink);
+			await using var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, _NullMessageSink.Instance);
 			var runnerPort = runnerEngine.Start();
-			await using var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, nullMessageSink);
+			await using var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, _NullMessageSink.Instance);
 			await executionEngine.Start();
 			await WaitForConnection(runnerEngine);
 
@@ -154,9 +152,9 @@ public class TcpEngineTests
 		[Fact]
 		public async ValueTask DisposingRunnerBeforeSendingQuit_SendsQuit()
 		{
-			var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, nullMessageSink);
+			var runnerEngine = new TcpRunnerEngine("1r", (_, _) => true, _NullMessageSink.Instance);
 			var runnerPort = runnerEngine.Start();
-			await using var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, nullMessageSink);
+			await using var executionEngine = new TcpExecutionEngine("1e", runnerPort, project, _NullMessageSink.Instance);
 			await executionEngine.Start();
 			await WaitForConnection(runnerEngine);
 

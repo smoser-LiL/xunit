@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +15,6 @@ namespace Xunit.Sdk
 	public static class SerializationHelper
 	{
 		static readonly BinaryFormatter formatter = new BinaryFormatter();
-		static readonly ConcurrentDictionary<Type, string> typeToTypeNameMap = new ConcurrentDictionary<Type, string>();
 
 		/// <summary>
 		/// De-serializes an object.

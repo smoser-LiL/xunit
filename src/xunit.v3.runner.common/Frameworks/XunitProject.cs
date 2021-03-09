@@ -5,7 +5,8 @@ using Xunit.Internal;
 namespace Xunit.Runner.Common
 {
 	/// <summary>
-	/// FOR INTERNAL USE ONLY.
+	/// Represents a project which contains zero or more test assemblies, as well as global
+	/// (cross-assembly) configuration settings.
 	/// </summary>
 	public class XunitProject : IEnumerable<XunitProjectAssembly>
 	{

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using Xunit.Internal;
-using Xunit.v3;
+using Xunit.Runner.Common;
 
-namespace Xunit.Runner.Common
+namespace Xunit.v3
 {
 	/// <summary>
 	/// Represents options passed to a test framework for discovery or execution.

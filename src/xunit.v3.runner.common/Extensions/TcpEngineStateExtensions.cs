@@ -12,18 +12,11 @@
 		/// </summary>
 		/// <param name="state"></param>
 		/// <returns></returns>
-		public static bool HasReachedConnectedState(this TcpEngineState state)
-		{
-			switch (state)
+		public static bool HasReachedConnectedState(this TcpEngineState state) =>
+			state switch
 			{
-				case TcpEngineState.Connected:
-				case TcpEngineState.Disconnecting:
-				case TcpEngineState.Disconnected:
-					return true;
-
-				default:
-					return false;
-			}
-		}
+				TcpEngineState.Connected or TcpEngineState.Disconnecting or TcpEngineState.Disconnected => true,
+				_ => false,
+			};
 	}
 }

@@ -7,6 +7,7 @@ using Xunit.Internal;
 using Xunit.Runner.Common;
 using Xunit.Runner.v3;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace Xunit.Runner.TdNet
 {
