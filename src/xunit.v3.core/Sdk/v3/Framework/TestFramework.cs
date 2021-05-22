@@ -49,7 +49,7 @@ namespace Xunit.v3
 
 			disposed = true;
 
-			await ExtensibilityPointFactory.DisposeAsync();
+			//await ExtensibilityPointFactory.DisposeAsync();
 			await DisposalTracker.DisposeAsync();
 		}
 
