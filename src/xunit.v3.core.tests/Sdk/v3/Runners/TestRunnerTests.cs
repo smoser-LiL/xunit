@@ -55,6 +55,18 @@ public class TestRunnerTests
 		var passed = messageBus.Messages.OfType<_TestPassed>().Single();
 		Assert.Equal(21.12m, passed.ExecutionTime);
 		Assert.Empty(passed.Output);
+		// Statuses
+		Assert.Equal(TestStatus.Initializing, runner.AfterTestStarting_Status);
+		Assert.NotNull(runner.BeforeTestFinished_State);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionMessages);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionParentIndices);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionStackTraces);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionTypes);
+		Assert.Equal(21.12m, runner.BeforeTestFinished_State.ExecutionTime);
+		Assert.Null(runner.BeforeTestFinished_State.FailureCause);
+		Assert.Equal(string.Empty, runner.BeforeTestFinished_State.Output);
+		Assert.Equal(TestResult.Passed, runner.BeforeTestFinished_State.Result);
+		Assert.Equal(TestStatus.Finished, runner.BeforeTestFinished_State.Status);
 	}
 
 	[Fact]
@@ -77,6 +89,18 @@ public class TestRunnerTests
 		Assert.Equal(21.12m, failed.ExecutionTime);
 		Assert.Empty(failed.Output);
 		Assert.Equal("Xunit.Sdk.TrueException", failed.ExceptionTypes.Single());
+		// Statuses
+		Assert.Equal(TestStatus.Initializing, runner.AfterTestStarting_Status);
+		Assert.NotNull(runner.BeforeTestFinished_State);
+		Assert.Equal(failed.Messages, runner.BeforeTestFinished_State.ExceptionMessages);
+		Assert.Equal(failed.ExceptionParentIndices, runner.BeforeTestFinished_State.ExceptionParentIndices);
+		Assert.Equal(failed.StackTraces, runner.BeforeTestFinished_State.ExceptionStackTraces);
+		Assert.Equal(failed.ExceptionTypes, runner.BeforeTestFinished_State.ExceptionTypes);
+		Assert.Equal(21.12m, runner.BeforeTestFinished_State.ExecutionTime);
+		Assert.Equal(FailureCause.Assertion, runner.BeforeTestFinished_State.FailureCause);
+		Assert.Equal(string.Empty, runner.BeforeTestFinished_State.Output);
+		Assert.Equal(TestResult.Failed, runner.BeforeTestFinished_State.Result);
+		Assert.Equal(TestStatus.Finished, runner.BeforeTestFinished_State.Status);
 	}
 
 	[Fact]
@@ -99,6 +123,18 @@ public class TestRunnerTests
 		Assert.Equal(0m, skipped.ExecutionTime);
 		Assert.Empty(skipped.Output);
 		Assert.Equal("Please don't run me", skipped.Reason);
+		// Statuses
+		Assert.Equal(TestStatus.Initializing, runner.AfterTestStarting_Status);
+		Assert.NotNull(runner.BeforeTestFinished_State);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionMessages);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionParentIndices);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionStackTraces);
+		Assert.Null(runner.BeforeTestFinished_State.ExceptionTypes);
+		Assert.Equal(0m, runner.BeforeTestFinished_State.ExecutionTime);
+		Assert.Null(runner.BeforeTestFinished_State.FailureCause);
+		Assert.Equal(string.Empty, runner.BeforeTestFinished_State.Output);
+		Assert.Equal(TestResult.Skipped, runner.BeforeTestFinished_State.Result);
+		Assert.Equal(TestStatus.Finished, runner.BeforeTestFinished_State.Status);
 	}
 
 	[Fact]
@@ -111,6 +147,8 @@ public class TestRunnerTests
 
 		var passed = messageBus.Messages.OfType<_TestPassed>().Single();
 		Assert.Equal("This is my text output", passed.Output);
+		Assert.NotNull(runner.BeforeTestFinished_State);
+		Assert.Equal("This is my text output", runner.BeforeTestFinished_State.Output);
 	}
 
 	[Fact]
@@ -238,9 +276,11 @@ public class TestRunnerTests
 
 		public bool InvokeTestAsync_Called;
 		public Action<ExceptionAggregator> AfterTestStarting_Callback = _ => { };
+		public TestStatus? AfterTestStarting_Status;
 		public bool AfterTestStarting_Called;
 		public Action<ExceptionAggregator> BeforeTestFinished_Callback = _ => { };
 		public bool BeforeTestFinished_Called;
+		public TestState? BeforeTestFinished_State;
 		public readonly new _ITestCase TestCase;
 		public CancellationTokenSource TokenSource;
 
@@ -303,12 +343,14 @@ public class TestRunnerTests
 		protected override void AfterTestStarting()
 		{
 			AfterTestStarting_Called = true;
+			AfterTestStarting_Status = TestContext.Current?.TestState?.Status;
 			AfterTestStarting_Callback(Aggregator);
 		}
 
 		protected override void BeforeTestFinished()
 		{
 			BeforeTestFinished_Called = true;
+			BeforeTestFinished_State = TestContext.Current?.TestState;
 			BeforeTestFinished_Callback(Aggregator);
 		}
 

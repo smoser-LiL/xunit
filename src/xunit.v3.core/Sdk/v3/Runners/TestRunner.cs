@@ -165,6 +165,8 @@ namespace Xunit.v3
 		/// <returns>Returns summary information about the test that was run.</returns>
 		public async Task<RunSummary> RunAsync()
 		{
+			TestContext.SetForTest(test, TestState.Initializing);
+
 			var runSummary = new RunSummary { Total = 1 };
 			var output = string.Empty;
 
@@ -192,11 +194,13 @@ namespace Xunit.v3
 			{
 				AfterTestStarting();
 
+				_TestResultMessage testResult;
+
 				if (!string.IsNullOrEmpty(SkipReason))
 				{
 					runSummary.Skipped++;
 
-					var testSkipped = new _TestSkipped
+					testResult = new _TestSkipped
 					{
 						AssemblyUniqueID = testAssemblyUniqueID,
 						ExecutionTime = 0m,
@@ -208,9 +212,6 @@ namespace Xunit.v3
 						TestMethodUniqueID = testMethodUniqueID,
 						TestUniqueID = testUniqueID
 					};
-
-					if (!MessageBus.QueueMessage(testSkipped))
-						CancellationTokenSource.Cancel();
 				}
 				else
 				{
@@ -227,7 +228,6 @@ namespace Xunit.v3
 					}
 
 					var exception = aggregator.ToException();
-					_TestResultMessage testResult;
 
 					if (exception == null)
 					{
@@ -263,29 +263,26 @@ namespace Xunit.v3
 					}
 					else
 					{
-						var errorMetadata = ExceptionUtility.ExtractMetadata(exception);
-						testResult = new _TestFailed
-						{
-							AssemblyUniqueID = testAssemblyUniqueID,
-							ExceptionParentIndices = errorMetadata.ExceptionParentIndices,
-							ExceptionTypes = errorMetadata.ExceptionTypes,
-							ExecutionTime = runSummary.Time,
-							Messages = errorMetadata.Messages,
-							Output = output,
-							StackTraces = errorMetadata.StackTraces,
-							TestCaseUniqueID = testCaseUniqueID,
-							TestClassUniqueID = testClassUniqueID,
-							TestCollectionUniqueID = testCollectionUniqueID,
-							TestMethodUniqueID = testMethodUniqueID,
-							TestUniqueID = testUniqueID
-						};
+						testResult = _TestFailed.FromException(
+							exception,
+							testAssemblyUniqueID,
+							testCollectionUniqueID,
+							testClassUniqueID,
+							testMethodUniqueID,
+							testCaseUniqueID,
+							testUniqueID,
+							runSummary.Time,
+							output
+						);
 						runSummary.Failed++;
 					}
-
-					if (!CancellationTokenSource.IsCancellationRequested)
-						if (!MessageBus.QueueMessage(testResult))
-							CancellationTokenSource.Cancel();
 				}
+
+				TestContext.SetForTest(test, TestState.FromTestResult(testResult));
+
+				if (!CancellationTokenSource.IsCancellationRequested)
+					if (!MessageBus.QueueMessage(testResult))
+						CancellationTokenSource.Cancel();
 
 				Aggregator.Clear();
 				BeforeTestFinished();
